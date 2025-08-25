@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { ArrowRight, Leaf, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -50,13 +51,17 @@ const Hero = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
-              <Button variant="hero" size="lg" className="text-lg">
-                Start Tracking
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20">
-                Watch Demo
-              </Button>
+              <Link to="/activities">
+                <Button variant="hero" size="lg" className="text-lg">
+                  Start Tracking
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link to="/demo">
+                <Button variant="outline" size="lg" className="text-lg bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20">
+                  Watch Demo
+                </Button>
+              </Link>
             </div>
 
             {/* Stats */}

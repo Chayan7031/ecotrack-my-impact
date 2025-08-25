@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
-import { TrendingDown, Leaf, Zap, Car, ShoppingBag } from "lucide-react";
+import { ArrowLeft, TrendingDown, Leaf, Zap, Car, ShoppingBag, Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const Dashboard = () => {
-  // Mock data for the dashboard
+const DashboardPage = () => {
   const weeklyData = [
     { day: "Mon", emissions: 2.1 },
     { day: "Tue", emissions: 1.8 },
@@ -23,21 +22,31 @@ const Dashboard = () => {
   ];
 
   return (
-    <section id="dashboard" className="py-20 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 animate-fade-up">
-          <h2 className="text-4xl font-bold text-foreground mb-4">
-            Your Carbon Dashboard
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            Track your progress and see the impact of your choices
-          </p>
+    <div className="min-h-screen bg-background pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Link to="/" className="text-muted-foreground hover:text-primary">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">Carbon Dashboard</h1>
+              <p className="text-muted-foreground">Track your environmental impact</p>
+            </div>
+          </div>
+          <Link to="/activities">
+            <Button variant="hero">
+              <Plus className="w-4 h-4 mr-2" />
+              Log Activity
+            </Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Chart Area */}
           <div className="lg:col-span-2">
-            <Card className="card-gradient shadow-card animate-scale-in">
+            <Card className="card-gradient shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <TrendingDown className="w-6 h-6 text-success" />
@@ -46,12 +55,11 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Simple bar chart representation */}
                   <div className="flex items-end justify-between h-48 bg-muted/50 rounded-lg p-4">
                     {weeklyData.map((data) => (
                       <div key={data.day} className="flex flex-col items-center space-y-2">
                         <div
-                          className="bg-primary rounded-t-md w-8 transition-all duration-500 hover:bg-primary-light"
+                          className="bg-primary rounded-t-md w-8 transition-all duration-500 hover:bg-primary-light cursor-pointer"
                           style={{ height: `${(data.emissions / 3) * 100}%` }}
                         ></div>
                         <span className="text-sm text-muted-foreground font-medium">
@@ -79,7 +87,7 @@ const Dashboard = () => {
           {/* Right Sidebar */}
           <div className="space-y-6">
             {/* Quick Stats */}
-            <Card className="card-gradient shadow-card animate-scale-in">
+            <Card className="card-gradient shadow-card">
               <CardHeader>
                 <CardTitle className="text-lg">Today's Impact</CardTitle>
               </CardHeader>
@@ -98,7 +106,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Activity Breakdown */}
-            <Card className="card-gradient shadow-card animate-scale-in">
+            <Card className="card-gradient shadow-card">
               <CardHeader>
                 <CardTitle className="text-lg">Activity Breakdown</CardTitle>
               </CardHeader>
@@ -121,7 +129,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="card-gradient shadow-card animate-scale-in">
+            <Card className="card-gradient shadow-card">
               <CardHeader>
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
@@ -149,8 +157,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
-export default Dashboard;
+export default DashboardPage;
