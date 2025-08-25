@@ -103,8 +103,10 @@ const GoalsPage = () => {
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="hero">
+                <Link to="/goals/new">
                 <Plus className="w-4 h-4 mr-2" />
                 New Goal
+                </Link>
               </Button>
             </DialogTrigger>
             <DialogContent>
