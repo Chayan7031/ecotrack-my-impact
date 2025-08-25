@@ -7,14 +7,161 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
-  }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          email: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          email?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          email?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      activities: {
+        Row: {
+          id: string
+          user_id: string
+          type: 'transport' | 'energy' | 'food' | 'shopping' | 'waste'
+          description: string
+          carbon_emitted: number
+          activity_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: 'transport' | 'energy' | 'food' | 'shopping' | 'waste'
+          description: string
+          carbon_emitted: number
+          activity_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: 'transport' | 'energy' | 'food' | 'shopping' | 'waste'
+          description?: string
+          carbon_emitted?: number
+          activity_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      goals: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          target_value: number
+          current_value: number
+          target_date: string
+          status: 'active' | 'completed' | 'paused'
+          category: 'transport' | 'energy' | 'food' | 'shopping' | 'waste' | 'general'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          target_value: number
+          current_value?: number
+          target_date: string
+          status?: 'active' | 'completed' | 'paused'
+          category: 'transport' | 'energy' | 'food' | 'shopping' | 'waste' | 'general'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          target_value?: number
+          current_value?: number
+          target_date?: string
+          status?: 'active' | 'completed' | 'paused'
+          category?: 'transport' | 'energy' | 'food' | 'shopping' | 'waste' | 'general'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      achievements: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string
+          earned: boolean
+          earned_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description: string
+          earned?: boolean
+          earned_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string
+          earned?: boolean
+          earned_date?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,15 +1,90 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Leaf } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/components/ui/use-toast";
 
 const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [signInData, setSignInData] = useState({ email: '', password: '' });
+  const [signUpData, setSignUpData] = useState({ 
+    fullName: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '' 
+  });
+  
+  const { user, signIn, signUp } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const success = await signIn(signInData.email, signInData.password);
+    if (success) {
+      navigate('/dashboard');
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (signUpData.password !== signUpData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (signUpData.password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    const success = await signUp(signUpData.email, signUpData.password, signUpData.fullName);
+    if (success) {
+      // Show success message
+      toast({
+        title: "Account Created Successfully!",
+        description: "If email confirmation is required, check your email. Otherwise, you can sign in now.",
+      });
+      // Clear form and potentially redirect
+      setSignUpData({
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+    }
+    
+    setIsLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -30,6 +105,24 @@ const AuthPage = () => {
           </div>
         </div>
 
+        {/* Development Notice */}
+        <Card className="mb-4 border-warning/50 bg-warning/10">
+          <CardContent className="p-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-5 h-5 bg-warning rounded-full flex items-center justify-center mt-0.5">
+                <span className="text-xs font-bold text-white">!</span>
+              </div>
+              <div className="text-sm">
+                <p className="font-medium text-warning-foreground mb-1">Development Mode</p>
+                <p className="text-muted-foreground">
+                  If you don't receive a confirmation email, email verification may be disabled. 
+                  You can try signing in directly after creating your account.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Auth Card */}
         <Card className="card-gradient shadow-glow">
           <CardContent className="p-8">
@@ -46,7 +139,7 @@ const AuthPage = () => {
                   <p className="text-muted-foreground">Continue your carbon reduction journey</p>
                 </div>
 
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSignIn}>
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email Address</Label>
                     <div className="relative">
@@ -56,6 +149,9 @@ const AuthPage = () => {
                         type="email"
                         placeholder="your@email.com"
                         className="pl-10"
+                        value={signInData.email}
+                        onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
+                        required
                       />
                     </div>
                   </div>
@@ -69,6 +165,9 @@ const AuthPage = () => {
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         className="pl-10 pr-10"
+                        value={signInData.password}
+                        onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
+                        required
                       />
                       <button
                         type="button"
@@ -85,13 +184,13 @@ const AuthPage = () => {
                       <input type="checkbox" className="rounded border-border" />
                       <span className="text-muted-foreground">Remember me</span>
                     </label>
-                    <Button variant="link" className="p-0 h-auto text-sm">
+                    <Button variant="link" className="p-0 h-auto text-sm" type="button">
                       Forgot password?
                     </Button>
                   </div>
 
-                  <Button variant="hero" className="w-full" size="lg">
-                    Sign In
+                  <Button variant="hero" className="w-full" size="lg" type="submit" disabled={isLoading}>
+                    {isLoading ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
@@ -103,7 +202,7 @@ const AuthPage = () => {
                   <p className="text-muted-foreground">Start tracking your carbon footprint today</p>
                 </div>
 
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleSignUp}>
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <div className="relative">
@@ -113,6 +212,9 @@ const AuthPage = () => {
                         type="text"
                         placeholder="John Doe"
                         className="pl-10"
+                        value={signUpData.fullName}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, fullName: e.target.value }))}
+                        required
                       />
                     </div>
                   </div>
@@ -126,6 +228,9 @@ const AuthPage = () => {
                         type="email"
                         placeholder="your@email.com"
                         className="pl-10"
+                        value={signUpData.email}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
+                        required
                       />
                     </div>
                   </div>
@@ -139,6 +244,9 @@ const AuthPage = () => {
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         className="pl-10 pr-10"
+                        value={signUpData.password}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
+                        required
                       />
                       <button
                         type="button"
@@ -159,6 +267,9 @@ const AuthPage = () => {
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
                         className="pl-10 pr-10"
+                        value={signUpData.confirmPassword}
+                        onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        required
                       />
                       <button
                         type="button"
@@ -171,21 +282,21 @@ const AuthPage = () => {
                   </div>
 
                   <div className="flex items-start space-x-2">
-                    <input type="checkbox" className="rounded border-border mt-1" />
+                    <input type="checkbox" className="rounded border-border mt-1" required />
                     <label className="text-sm text-muted-foreground">
                       I agree to the{" "}
-                      <Button variant="link" className="p-0 h-auto text-sm">
+                      <Button variant="link" className="p-0 h-auto text-sm" type="button">
                         Terms of Service
                       </Button>{" "}
                       and{" "}
-                      <Button variant="link" className="p-0 h-auto text-sm">
+                      <Button variant="link" className="p-0 h-auto text-sm" type="button">
                         Privacy Policy
                       </Button>
                     </label>
                   </div>
 
-                  <Button variant="hero" className="w-full" size="lg">
-                    Create Account
+                  <Button variant="hero" className="w-full" size="lg" type="submit" disabled={isLoading}>
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>

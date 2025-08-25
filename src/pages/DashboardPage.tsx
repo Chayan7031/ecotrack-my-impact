@@ -1,29 +1,81 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, TrendingDown, Leaf, Zap, Car, ShoppingBag, Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useActivities } from "@/hooks/useActivities";
+import { useAuth } from "@/hooks/useAuth";
+import Navigation from "@/components/Navigation";
 
 const DashboardPage = () => {
-  const weeklyData = [
-    { day: "Mon", emissions: 2.1 },
-    { day: "Tue", emissions: 1.8 },
-    { day: "Wed", emissions: 2.4 },
-    { day: "Thu", emissions: 1.5 },
-    { day: "Fri", emissions: 2.8 },
-    { day: "Sat", emissions: 1.2 },
-    { day: "Sun", emissions: 0.9 },
-  ];
+  const { user } = useAuth();
+  const { activities, isLoading } = useActivities();
 
-  const activities = [
-    { icon: Car, type: "Transport", amount: 0.8, color: "text-destructive" },
-    { icon: Zap, type: "Energy", amount: 0.4, color: "text-warning" },
-    { icon: ShoppingBag, type: "Shopping", amount: 0.3, color: "text-ocean" },
-    { icon: Leaf, type: "Food", amount: 0.2, color: "text-success" },
-  ];
+  // Calculate activity breakdown from real data
+  const activityBreakdown = useMemo(() => {
+    const breakdown = activities.reduce((acc, activity) => {
+      const type = activity.type;
+      if (!acc[type]) {
+        acc[type] = 0;
+      }
+      acc[type] += activity.carbon_emitted;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return [
+      { icon: Car, type: "Transport", amount: breakdown.transport || 0, color: "text-destructive" },
+      { icon: Zap, type: "Energy", amount: breakdown.energy || 0, color: "text-warning" },
+      { icon: ShoppingBag, type: "Shopping", amount: breakdown.shopping || 0, color: "text-ocean" },
+      { icon: Leaf, type: "Food", amount: breakdown.food || 0, color: "text-success" },
+    ];
+  }, [activities]);
+
+  // Calculate weekly data from real activities
+  const weeklyData = useMemo(() => {
+    const today = new Date();
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    const weekData = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dayActivities = activities.filter(activity => {
+        const activityDate = new Date(activity.activity_date);
+        return activityDate.toDateString() === date.toDateString();
+      });
+      
+      const totalEmissions = dayActivities.reduce((sum, activity) => 
+        sum + activity.carbon_emitted, 0
+      );
+      
+      weekData.push({
+        day: weekdays[date.getDay()],
+        emissions: totalEmissions,
+      });
+    }
+    
+    return weekData;
+  }, [activities]);
+
+  // Calculate today's emissions
+  const todayEmissions = useMemo(() => {
+    const today = new Date().toDateString();
+    return activities
+      .filter(activity => new Date(activity.activity_date).toDateString() === today)
+      .reduce((sum, activity) => sum + activity.carbon_emitted, 0);
+  }, [activities]);
+
+  const weeklyAverage = useMemo(() => {
+    const total = weeklyData.reduce((sum, day) => sum + day.emissions, 0);
+    return total / 7;
+  }, [weeklyData]);
 
   return (
-    <div className="min-h-screen bg-background pt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-background pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
@@ -73,10 +125,10 @@ const DashboardPage = () => {
                   </div>
                   
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <span>Weekly Average: 1.7kg CO₂</span>
+                    <span>Weekly Average: {weeklyAverage.toFixed(1)}kg CO₂</span>
                     <span className="flex items-center text-success">
                       <TrendingDown className="w-4 h-4 mr-1" />
-                      -12% from last week
+                      Track for trends
                     </span>
                   </div>
                 </div>
@@ -93,13 +145,13 @@ const DashboardPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-primary mb-2">1.3kg</div>
+                  <div className="text-4xl font-bold text-primary mb-2">{todayEmissions.toFixed(1)}kg</div>
                   <div className="text-muted-foreground mb-4">CO₂ emitted today</div>
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-success h-2 rounded-full" style={{ width: "65%" }}></div>
+                    <div className="bg-success h-2 rounded-full" style={{ width: `${Math.min((todayEmissions / 2) * 100, 100)}%` }}></div>
                   </div>
                   <div className="text-sm text-muted-foreground mt-2">
-                    65% of daily goal (2kg)
+                    {Math.round((todayEmissions / 2) * 100)}% of daily goal (2kg)
                   </div>
                 </div>
               </CardContent>
@@ -112,7 +164,7 @@ const DashboardPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {activities.map((activity) => {
+                  {activityBreakdown.map((activity) => {
                     const Icon = activity.icon;
                     return (
                       <div key={activity.type} className="flex items-center justify-between">
@@ -120,7 +172,7 @@ const DashboardPage = () => {
                           <Icon className={`w-5 h-5 ${activity.color}`} />
                           <span className="font-medium">{activity.type}</span>
                         </div>
-                        <span className="text-muted-foreground">{activity.amount}kg</span>
+                        <span className="text-muted-foreground">{activity.amount.toFixed(1)}kg</span>
                       </div>
                     );
                   })}
@@ -156,8 +208,9 @@ const DashboardPage = () => {
             </Card>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

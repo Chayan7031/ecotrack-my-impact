@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, Leaf, BarChart3, Target, BookOpen, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, Leaf, BarChart3, Target, BookOpen, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
@@ -13,6 +17,11 @@ const Navigation = () => {
     { name: "Tips", href: "/tips", icon: BookOpen },
     { name: "Profile", href: "/profile", icon: User },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -45,16 +54,31 @@ const Navigation = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button variant="hero" size="sm">
-                Get Started
-              </Button>
-            </Link>
+            <ThemeToggle />
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user.user_metadata?.full_name || user.email}
+                </span>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button variant="hero" size="sm">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -88,16 +112,40 @@ const Navigation = () => {
                 );
               })}
               <div className="pt-2 mt-2 border-t border-border space-y-2">
-                <Link to="/auth" className="block" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full justify-start">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/auth" className="block" onClick={() => setIsOpen(false)}>
-                  <Button variant="hero" size="sm" className="w-full">
-                    Get Started
-                  </Button>
-                </Link>
+                <div className="px-3 py-2">
+                  <ThemeToggle />
+                </div>
+                {user ? (
+                  <>
+                    <div className="px-3 py-2">
+                      <span className="text-sm text-muted-foreground">
+                        {user.user_metadata?.full_name || user.email}
+                      </span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-start" 
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth" className="block" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/auth" className="block" onClick={() => setIsOpen(false)}>
+                      <Button variant="hero" size="sm" className="w-full">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
