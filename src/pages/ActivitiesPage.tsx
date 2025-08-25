@@ -21,7 +21,9 @@ const ActivitiesPage = () => {
     activity_date: new Date().toISOString().split('T')[0]
   });
 
-  const { activities, isLoading, addActivity, deleteActivity } = useActivities();
+  const { activities, isLoading, addActivity, updateActivity, deleteActivity } = useActivities();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editActivity, setEditActivity] = useState<any>(null);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -65,6 +67,19 @@ const ActivitiesPage = () => {
     if (confirm('Are you sure you want to delete this activity?')) {
       await deleteActivity.mutateAsync(id);
     }
+  };
+
+  const handleEditActivity = (activity: any) => {
+    setEditActivity(activity);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editActivity) return;
+    await updateActivity.mutateAsync(editActivity);
+    setIsEditDialogOpen(false);
+    setEditActivity(null);
   };
 
   return (
@@ -156,6 +171,75 @@ const ActivitiesPage = () => {
                 </form>
               </DialogContent>
             </Dialog>
+            {/* Edit Activity Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Activity</DialogTitle>
+                </DialogHeader>
+                {editActivity && (
+                  <form onSubmit={handleUpdateActivity} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-activity-type">Activity Type</Label>
+                      <Select 
+                        value={editActivity.type} 
+                        onValueChange={(value: any) => setEditActivity((prev: any) => ({ ...prev, type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="transport">Transport</SelectItem>
+                          <SelectItem value="energy">Energy</SelectItem>
+                          <SelectItem value="food">Food</SelectItem>
+                          <SelectItem value="shopping">Shopping</SelectItem>
+                          <SelectItem value="waste">Waste</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-description">Description</Label>
+                      <Input
+                        id="edit-description"
+                        value={editActivity.description}
+                        onChange={(e) => setEditActivity((prev: any) => ({ ...prev, description: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-carbon-emitted">Carbon Emitted (kg)</Label>
+                      <Input
+                        id="edit-carbon-emitted"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={editActivity.carbon_emitted}
+                        onChange={(e) => setEditActivity((prev: any) => ({ ...prev, carbon_emitted: parseFloat(e.target.value) || 0 }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-activity-date">Date</Label>
+                      <Input
+                        id="edit-activity-date"
+                        type="date"
+                        value={editActivity.activity_date}
+                        onChange={(e) => setEditActivity((prev: any) => ({ ...prev, activity_date: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" variant="hero" disabled={updateActivity.isPending}>
+                        {updateActivity.isPending ? "Updating..." : "Update Activity"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
 
         {/* Filters */}
@@ -229,7 +313,7 @@ const ActivitiesPage = () => {
                         <div className="text-sm text-muted-foreground">CO₂</div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditActivity(activity)}>
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
