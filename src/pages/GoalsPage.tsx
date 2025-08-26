@@ -11,6 +11,9 @@ import { useGoals } from "@/hooks/useGoals";
 
 const GoalsPage = () => {
   const { goals, isLoading, addGoal, updateGoal, deleteGoal } = useGoals();
+  const [trackDialogOpen, setTrackDialogOpen] = useState(false);
+  const [trackGoal, setTrackGoal] = useState<null | (typeof newGoal & { id?: string })>(null);
+  const [trackValue, setTrackValue] = useState(0);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   type GoalStatus = "active" | "completed" | "paused";
@@ -27,6 +30,7 @@ const GoalsPage = () => {
   const [editGoal, setEditGoal] = useState<null | (typeof newGoal & { id?: string })>(null);
 
   const getProgressPercentage = (current: number, target: number) => {
+    if (!target || target === 0) return 0;
     return Math.min((current / target) * 100, 100);
   };
 
@@ -84,6 +88,26 @@ const GoalsPage = () => {
     if (confirm('Are you sure you want to delete this goal?')) {
       await deleteGoal.mutateAsync(id);
     }
+  };
+
+  // Dynamic stats
+  const activeGoals = goals.filter((g: any) => g.status === 'active').length;
+  const completedGoals = goals.filter((g: any) => g.status === 'completed').length;
+  const avgProgress = goals.length > 0 ? Math.round(goals.reduce((acc: number, g: any) => acc + getProgressPercentage(g.current_value, g.target_value), 0) / goals.length) : 0;
+
+  // Track Progress logic
+  const handleTrackProgress = (goal: any) => {
+    setTrackGoal(goal);
+    setTrackValue(goal.current_value);
+    setTrackDialogOpen(true);
+  };
+
+  const handleTrackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackGoal || !trackGoal.id) return;
+    await updateGoal.mutateAsync({ ...trackGoal, id: trackGoal.id, current_value: trackValue });
+    setTrackDialogOpen(false);
+    setTrackGoal(null);
   };
 
   return (
@@ -313,19 +337,19 @@ const GoalsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="card-gradient shadow-card">
             <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-success mb-2">2</div>
+              <div className="text-3xl font-bold text-success mb-2">{activeGoals}</div>
               <div className="text-muted-foreground">Active Goals</div>
             </CardContent>
           </Card>
           <Card className="card-gradient shadow-card">
             <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-primary mb-2">1</div>
+              <div className="text-3xl font-bold text-primary mb-2">{completedGoals}</div>
               <div className="text-muted-foreground">Completed</div>
             </CardContent>
           </Card>
           <Card className="card-gradient shadow-card">
             <CardContent className="p-6 text-center">
-              <div className="text-3xl font-bold text-warning mb-2">68%</div>
+              <div className="text-3xl font-bold text-warning mb-2">{avgProgress}%</div>
               <div className="text-muted-foreground">Avg Progress</div>
             </CardContent>
           </Card>
@@ -402,7 +426,7 @@ const GoalsPage = () => {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                           {goal.status === 'active' && (
-                            <Button variant="eco" size="sm">
+                            <Button variant="eco" size="sm" onClick={() => handleTrackProgress(goal)}>
                               <TrendingDown className="w-4 h-4 mr-2" />
                               Track Progress
                             </Button>
@@ -425,12 +449,43 @@ const GoalsPage = () => {
             <p className="text-muted-foreground mb-6">
               Create personalized targets to reduce your carbon footprint and track your environmental impact.
             </p>
-            <Button variant="hero" size="lg">
+            <Button variant="hero" size="lg" onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Goal
             </Button>
           </CardContent>
         </Card>
+        {/* Track Progress Dialog */}
+        <Dialog open={trackDialogOpen} onOpenChange={setTrackDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Track Progress</DialogTitle>
+            </DialogHeader>
+            {trackGoal && (
+              <form onSubmit={handleTrackSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="track-current">Current Value (kg CO₂)</Label>
+                  <Input
+                    id="track-current"
+                    type="number"
+                    min="0"
+                    value={trackValue}
+                    onChange={(e) => setTrackValue(parseFloat(e.target.value) || 0)}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setTrackDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="hero" disabled={updateGoal.isPending}>
+                    {updateGoal.isPending ? "Saving..." : "Save Progress"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
